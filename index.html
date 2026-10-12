@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo Mental V3.0 - Telesecundaria Ignacio Zaragoza</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0F172A',
+                        cardBg: '#1E293B',
+                        cardHover: '#334155',
+                        accentBlue: '#3B82F6',
+                        accentGreen: '#10B981',
+                        accentAmber: '#F59E0B',
+                        accentRed: '#EF4444',
+                        accentPurple: '#8B5CF6',
+                        softGray: '#94A3B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0F172A;
+            color: #F8FAFC;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F172A; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        .pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-report, #printable-report * { visibility: visible; }
+            #printable-report { position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- HEADER INSTITUCIONAL -->
+    <header class="bg-cardBg border-b border-slate-800 shadow-xl sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center shadow-lg font-black text-xl text-white">
+                    IZ
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm sm:text-base tracking-tight text-slate-100">
+                        Escuela Telesecundaria "Ignacio Zaragoza"
+                    </h1>
+                    <p class="text-xs text-softGray">
+                        Matemáticas - Cálculo Mental V3.0 • Prof. <span class="text-blue-400 font-semibold">Kevin</span> • <span class="text-emerald-400 font-semibold">2° A</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Global Scoreboard & Settings Button -->
+            <div class="flex items-center gap-3">
+                <div id="global-stats" class="flex items-center gap-3 bg-slate-900/90 px-4 py-2 rounded-2xl border border-slate-800 shadow-inner">
+                    <div class="flex items-center gap-1.5" title="Puntos XP">
+                        <span class="text-amber-400 text-lg">⚡</span>
+                        <span id="header-xp" class="font-bold text-sm text-slate-200">0 XP</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-800"></div>
+                    <div class="flex items-center gap-1.5" title="Multiplicador de Racha">
+                        <span class="text-orange-500 text-lg">🔥</span>
+                        <span id="header-streak" class="font-bold text-sm text-slate-200">x1</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-800"></div>
+                    <div id="lives-container" class="flex items-center gap-1.5" title="Vidas disponibles">
+                        <div id="header-lives" class="flex gap-1 text-red-500 text-base">
+                            ❤️❤️❤️
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Settings Modal Trigger -->
+                <button onclick="app.toggleSettingsModal(true)" title="Configurar Google Sheet" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-2xl border border-slate-700 transition-colors">
+                    ⚙️
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center items-center">
+
+        <!-- SCREEN: Student Registration & Mode Select -->
+        <div id="screen-menu" class="w-full max-w-3xl pop">
+            <div class="text-center mb-6">
+                <span class="inline-block px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-semibold rounded-full border border-blue-500/20 mb-2">
+                    🧠 Gimnasio de Agilidad Mental V3.0
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+                    Desafíos Matemáticos 2° A
+                </h2>
+                <p class="text-softGray text-sm max-w-lg mx-auto">
+                    Aprende, practica y desafía tu velocidad con sincronización directa al registro del Profesor Kevin.
+                </p>
+            </div>
+
+            <!-- Student Registration Card -->
+            <div class="bg-cardBg border border-slate-800 rounded-2xl p-4 mb-6 shadow-lg">
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Nombre Completo o N° de Lista del Alumno(a):</label>
+                <div class="flex gap-2">
+                    <input type="text" id="student-name-input" placeholder="Escribe tu nombre (Ej: Juan Pérez - N° 12)..." class="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors" />
+                    <button onclick="app.saveStudentName()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode Selector -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div id="mode-card-practice" onclick="app.setGameMode('practice')" class="cursor-pointer bg-cardBg border-2 border-emerald-500/50 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl">
+                        🌱
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-base">Modo Práctica</h4>
+                        <p class="text-xs text-softGray">Sin tiempo ni vidas. Pistas ilimitadas para aprender sin estrés.</p>
+                    </div>
+                </div>
+
+                <div id="mode-card-challenge" onclick="app.setGameMode('challenge')" class="cursor-pointer bg-cardBg border-2 border-transparent hover:border-blue-500/50 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl">
+                        🚀
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-base">Modo Desafío (Rally)</h4>
+                        <p class="text-xs text-softGray">Con tiempo, vidas, racha, bonos de XP y reporte automático.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level Selector -->
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Selecciona un Nivel:</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- Level 1 -->
+                <div onclick="app.startLevel(1)" class="group bg-cardBg hover:bg-cardHover border border-slate-800 hover:border-blue-500/50 rounded-2xl p-5 cursor-pointer transition-all duration-300 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg mb-3">
+                            01
+                        </div>
+                        <h3 class="font-bold text-base text-white mb-1 group-hover:text-blue-400 transition-colors">Sumas y Restas</h3>
+                        <p class="text-xs text-softGray mb-3">Ej: 25 + 5, 80 - 20, 70 - 25...</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                        <span class="text-xs text-blue-400 font-medium">10 Operaciones</span>
+                        <div id="badge-lvl-1" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Pendiente</div>
+                    </div>
+                </div>
+
+                <!-- Level 2 -->
+                <div onclick="app.startLevel(2)" class="group bg-cardBg hover:bg-cardHover border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 cursor-pointer transition-all duration-300 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-lg mb-3">
+                            02
+                        </div>
+                        <h3 class="font-bold text-base text-white mb-1 group-hover:text-emerald-400 transition-colors">Multiplicación y División</h3>
+                        <p class="text-xs text-softGray mb-3">Ej: 6 × 7, 100 ÷ 25, 180 ÷ 9...</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                        <span class="text-xs text-emerald-400 font-medium">10 Operaciones</span>
+                        <div id="badge-lvl-2" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Pendiente</div>
+                    </div>
+                </div>
+
+                <!-- Level 3 -->
+                <div onclick="app.startLevel(3)" class="group bg-cardBg hover:bg-cardHover border border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 cursor-pointer transition-all duration-300 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg mb-3">
+                            03
+                        </div>
+                        <h3 class="font-bold text-base text-white mb-1 group-hover:text-amber-400 transition-colors">Desafío Mixto</h3>
+                        <p class="text-xs text-softGray mb-3">Ej: 45 + 35, 12 × 5, 930 ÷ 30...</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                        <span class="text-xs text-amber-400 font-medium">10 Operaciones</span>
+                        <div id="badge-lvl-3" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Pendiente</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Badges Display -->
+            <div class="bg-cardBg border border-slate-800 rounded-2xl p-4 mb-4">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Tus Medallas Alcanzadas:</h4>
+                <div id="badges-container" class="flex flex-wrap gap-2">
+                    <!-- Dynamic Badges -->
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-500">
+                <span>Instrucción Prof. Kevin: Lee con atención las pistas si te equivocas.</span>
+                <button onclick="app.resetData()" class="hover:text-red-400 transition-colors">Reiniciar Progreso</button>
+            </div>
+        </div>
+
+        <!-- SCREEN: Quiz Gameplay Area -->
+        <div id="screen-quiz" class="w-full max-w-xl hidden pop">
+            <!-- Navigation & Progress Bar -->
+            <div class="flex items-center justify-between mb-3">
+                <button onclick="app.returnToMenu()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    ← Menú
+                </button>
+                <div class="flex-1 mx-4">
+                    <div class="flex justify-between text-xs text-softGray mb-1">
+                        <span id="quiz-level-title" class="font-semibold text-blue-400">Nivel 1</span>
+                        <span id="quiz-progress-text">Pregunta 1 de 10</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="quiz-progress-bar" class="h-full bg-blue-500 transition-all duration-300 rounded-full" style="width: 10%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timer Bar (Challenge Mode Only) -->
+            <div id="timer-box" class="w-full bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800 mb-3 flex items-center gap-3">
+                <span class="text-sm">⏱️</span>
+                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="timer-bar" class="h-full bg-emerald-500 transition-all duration-1000 rounded-full" style="width: 100%;"></div>
+                </div>
+                <span id="timer-text" class="text-xs font-bold text-slate-300 w-12 text-right">20s</span>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-cardBg border border-slate-800 rounded-3xl p-6 shadow-2xl relative mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span id="question-type-badge" class="px-3 py-1 bg-blue-500/10 text-blue-400 font-semibold text-xs rounded-full border border-blue-500/20">
+                        Cálculo Mental
+                    </span>
+                    <button onclick="app.speakCurrentOperation()" title="Escuchar pregunta" class="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-bold transition-all">
+                        <span>🔊</span>
+                        <span>Escuchar</span>
+                    </button>
+                </div>
+
+                <div class="text-center my-6">
+                    <h3 id="question-prompt" class="text-3xl sm:text-4xl font-extrabold text-white tracking-wider mb-2">
+                        25 + 5 = ?
+                    </h3>
+                </div>
+
+                <!-- Input & Submit -->
+                <div class="space-y-3 mb-4">
+                    <div class="flex gap-2">
+                        <input type="number" id="answer-input" placeholder="Tu resultado..." class="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-2xl text-white text-lg font-bold text-center focus:outline-none focus:border-blue-500 transition-colors" />
+                        <button id="btn-submit" onclick="app.submitAnswer()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pedagogical Hint Box -->
+                <div id="feedback-box" class="hidden rounded-2xl p-4 mb-3 text-sm font-medium flex items-start gap-3 transition-all">
+                    <span id="feedback-icon" class="text-xl">💡</span>
+                    <div class="flex-1">
+                        <div id="feedback-title" class="font-bold mb-0.5">Pista Lógica</div>
+                        <div id="feedback-desc" class="text-xs opacity-90 leading-relaxed">Suma primero las decenas y luego añade las unidades.</div>
+                    </div>
+                </div>
+
+                <!-- Next Question Button -->
+                <button id="btn-next" onclick="app.nextQuestion()" class="w-full hidden py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg transition-all">
+                    Siguiente Pregunta →
+                </button>
+            </div>
+
+            <!-- Rescue Power-Ups Bar (Challenge Mode Only) -->
+            <div id="rescue-bar" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-2">
+                <span class="text-xs text-softGray font-medium">Tienda de Rescate:</span>
+                <div class="flex gap-2">
+                    <button onclick="app.buyLife()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1">
+                        <span>❤️ +1 Vida</span>
+                        <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1 rounded">(100 XP)</span>
+                    </button>
+                    <button onclick="app.buyShield()" class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1">
+                        <span>🛡️ +10s Tiempo</span>
+                        <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1 rounded">(100 XP)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: Results Summary & Formative Report -->
+        <div id="screen-result" class="w-full max-w-2xl hidden pop">
+            <div id="printable-report" class="bg-cardBg border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+                
+                <!-- Google Sheets Send Status Alert -->
+                <div id="sheets-status-banner" class="mb-4 p-3 rounded-2xl text-xs font-bold text-center transition-all bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center gap-2">
+                    <span>☁️</span>
+                    <span id="sheets-status-text">Sincronizando con el cuaderno del Profesor Kevin...</span>
+                </div>
+
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-blue-500/20 border border-blue-500/40 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 text-blue-400">
+                        🏆
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-white mb-1">¡Nivel Finalizado!</h2>
+                    <p id="res-student-header" class="text-xs text-blue-400 font-semibold">Alumno: Estudiante de 2° A</p>
+                </div>
+
+                <div id="result-stars" class="flex justify-center gap-2 text-3xl mb-6">
+                    ⭐ ⭐ ⭐
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[11px] text-softGray mb-0.5">Aciertos</div>
+                        <div id="res-correct" class="text-lg font-extrabold text-emerald-400">10/10</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[11px] text-softGray mb-0.5">Porcentaje</div>
+                        <div id="res-pct" class="text-lg font-extrabold text-blue-400">100%</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[11px] text-softGray mb-0.5">XP Ganados</div>
+                        <div id="res-xp" class="text-lg font-extrabold text-amber-400">+150 XP</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[11px] text-softGray mb-0.5">Modo</div>
+                        <div id="res-mode" class="text-lg font-extrabold text-purple-400">Desafío</div>
+                    </div>
+                </div>
+
+                <!-- Metacognitive Breakdown -->
+                <div class="mb-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <span>🔍</span>
+                        <span>Análisis Metacognitivo (Áreas de Oportunidad):</span>
+                    </h4>
+                    <div id="res-error-breakdown" class="text-xs text-softGray space-y-2">
+                        <!-- Dynamic error list -->
+                    </div>
+                </div>
+
+                <!-- New Badges Earned -->
+                <div id="new-badges-box" class="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 hidden">
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">¡Nuevas Medallas Desbloqueadas! 🎉</h4>
+                    <div id="new-badges-list" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="window.print()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl transition-all text-xs flex items-center justify-center gap-2">
+                        <span>📄</span>
+                        <span>Imprimir Reporte Formativo</span>
+                    </button>
+                    <button onclick="app.returnToMenu()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all text-xs">
+                        Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: Teacher Google Sheets Setup -->
+    <div id="modal-settings" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl pop">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span>⚙️</span>
+                    <span>Configuración Google Sheets</span>
+                </h3>
+                <button onclick="app.toggleSettingsModal(false)" class="text-slate-400 hover:text-white font-bold text-xl">
+                    ×
+                </button>
+            </div>
+            <p class="text-xs text-softGray mb-4">
+                Pega aquí la URL de la Web App desplegada en tu Google Apps Script para recibir automáticamente las calificaciones del grupo 2° A.
+            </p>
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-300 mb-1">URL de Google Web App Script:</label>
+                <input type="text" id="gsheets-url-input" placeholder="https://script.google.com/macros/s/AKfycbx.../exec" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 transition-colors" />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="app.toggleSettingsModal(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold">
+                    Cancelar
+                </button>
+                <button onclick="app.saveGSheetsUrl()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold">
+                    Guardar URL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-cardBg/40 border-t border-slate-800/80 py-3 text-center text-xs text-softGray">
+        <p>Escuela Telesecundaria "Ignacio Zaragoza" • Matemáticas - Cálculo Mental V3.0 • Profesor Kevin • 2° A</p>
+    </footer>
+
+    <script>
+        // Web Audio API Sound Synthesizer Engine
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            playCorrect() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.08);
+                    osc.frequency.setValueAtTime(783.99, now + 0.16);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } catch(e) {}
+            }
+            playError() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(120, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } catch(e) {}
+            }
+            playRescue() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.setValueAtTime(700, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } catch(e) {}
+            }
+            playVictory() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.value = freq;
+                        const startTime = now + (i * 0.1);
+                        gain.gain.setValueAtTime(0.15, startTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.28);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.28);
+                    });
+                } catch(e) {}
+            }
+        }
+
+        // Canvas Confetti Engine
+        class ConfettiEngine {
+            constructor() {
+                this.canvas = document.getElementById('confetti-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.animId = null;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            }
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            fire() {
+                this.particles = [];
+                const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+                for (let i = 0; i < 90; i++) {
+                    this.particles.push({
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2,
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: (Math.random() - 0.7) * 14,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: Math.random() * 7 + 4,
+                        gravity: 0.25,
+                        opacity: 1
+                    });
+                }
+                if (!this.animId) this.animate();
+            }
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.particles.forEach((p) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.opacity -= 0.012;
+                    this.ctx.globalAlpha = Math.max(0, p.opacity);
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                this.particles = this.particles.filter(p => p.opacity > 0);
+                if (this.particles.length > 0) {
+                    this.animId = requestAnimationFrame(() => this.animate());
+                } else {
+                    this.animId = null;
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+            }
+        }
+
+        // Question Database (Guaranteed positive integers)
+        const LEVELS_DATA = {
+            1: {
+                title: "Nivel 1: Sumas y Restas Directas",
+                questions: [
+                    { q: "25 + 5", a: 30, hint: "Suma 5 para llegar a la decena exacta de 30." },
+                    { q: "50 + 50", a: 100, hint: "Junta 5 decenas y 5 decenas = 10 decenas (100)." },
+                    { q: "80 - 20", a: 60, hint: "Resta 2 decenas a 8 decenas (8 - 2 = 6 decenas)." },
+                    { q: "70 - 25", a: 45, hint: "Resta 20 a 70 (50) y quita las 5 unidades sobrantes." },
+                    { q: "35 + 15", a: 50, hint: "Suma 5 + 5 = 10, luego agrega 30 + 10." },
+                    { q: "45 + 26", a: 71, hint: "Suma 45 + 20 = 65, y añade 6." },
+                    { q: "90 + 10", a: 100, hint: "Una decena más para completar 100." },
+                    { q: "73 + 7", a: 80, hint: "3 + 7 completa la decena siguiente." },
+                    { q: "65 - 25", a: 40, hint: "Quita las 5 unidades (queda 60) y resta 20." },
+                    { q: "17 + 25", a: 42, hint: "Suma 17 + 20 = 37, luego suma 5." }
+                ]
+            },
+            2: {
+                title: "Nivel 2: Multiplicaciones y Divisiones Exactas",
+                questions: [
+                    { q: "6 × 7", a: 42, hint: "Calcula 6 × 6 = 36 y suma un 6 adicional." },
+                    { q: "8 × 9", a: 72, hint: "Multiplica 8 × 10 (80) y réstale 8." },
+                    { q: "100 ÷ 25", a: 4, hint: "¿Cuántas monedas de 25 equivalen a 100?" },
+                    { q: "400 ÷ 10", a: 40, hint: "Dividir entre 10 equivale a eliminar un cero." },
+                    { q: "180 ÷ 9", a: 20, hint: "Divide 18 ÷ 9 = 2 y agrega el cero al final." },
+                    { q: "50 ÷ 25", a: 2, hint: "¿Cuántas veces cabe el 25 en el 50?" },
+                    { q: "360 ÷ 40", a: 9, hint: "Elimina un cero de ambos: 36 ÷ 4 = 9." },
+                    { q: "7 × 8", a: 56, hint: "El doble de 7 es 14, duplica a 28, y duplica a 56." },
+                    { q: "250 ÷ 25", a: 10, hint: "El 25 cabe exactamente 10 veces en 250." },
+                    { q: "9 × 6", a: 54, hint: "Es equivalente a 6 × 9." }
+                ]
+            },
+            3: {
+                title: "Nivel 3: Desafío Mixto",
+                questions: [
+                    { q: "45 + 35", a: 80, hint: "40 + 30 = 70, y 5 + 5 = 10. Suma ambos." },
+                    { q: "12 × 5", a: 60, hint: "Multiplica 12 × 10 (120) y calcula la mitad." },
+                    { q: "930 ÷ 30", a: 31, hint: "Quita un cero de ambos: 93 ÷ 3 = 31." },
+                    { q: "80 - 35", a: 45, hint: "Resta 30 a 80 (50) y resta 5 más." },
+                    { q: "290 ÷ 29", a: 10, hint: "29 por 10 es igual a 290." },
+                    { q: "15 × 4", a: 60, hint: "El doble de 15 es 30, y el doble de 30 es 60." },
+                    { q: "36 + 47", a: 83, hint: "30 + 40 = 70, y 6 + 7 = 13. Suma 70 + 13." },
+                    { q: "450 ÷ 45", a: 10, hint: "Todo número seguido de cero entre sí da 10." },
+                    { q: "14 × 6", a: 84, hint: "10 × 6 = 60, y 4 × 6 = 24. Suma 60 + 24." },
+                    { q: "120 ÷ 12", a: 10, hint: "¿Cuántas decenas componen a 120?" }
+                ]
+            }
+        };
+
+        const ALL_BADGES = {
+            rayo: { name: "⚡ Rayo del Cálculo", desc: "Responde en menos de 3 segundos." },
+            acero: { name: "🛡️ Mente de Acero", desc: "Supera un nivel sin perder vidas." },
+            pistas: { name: "🧠 Maestro de Pistas", desc: "Corregiste 3 errores guiado por las pistas." }
+        };
+
+        class MentalCalcAppV3 {
+            constructor() {
+                this.sound = new SoundEngine();
+                this.confetti = new ConfettiEngine();
+                this.studentName = "Estudiante de 2° A";
+                this.gsheetsUrl = "";
+                this.gameMode = "practice";
+                
+                this.xp = 0;
+                this.streak = 1;
+                this.lives = 3;
+                this.currentLevel = 1;
+                this.currentIndex = 0;
+                this.score = 0;
+                this.completedLevels = { 1: false, 2: false, 3: false };
+                this.badgesEarned = {};
+
+                // Adaptive ZDP variables
+                this.consecutiveFastAnswers = 0;
+                this.consecutiveErrors = 0;
+                this.timeLimitPerQuestion = 20;
+
+                // Game state tracking
+                this.questionStartTime = 0;
+                this.questionAttempts = [];
+                this.correctedWithHintsCount = 0;
+                this.fastAnswersCount = 0;
+
+                this.timerInterval = null;
+                this.timeLeft = 20;
+                this.isPausedForCorrection = false;
+
+                this.loadProgress();
+                this.updateGlobalUI();
+            }
+
+            loadProgress() {
+                const saved = localStorage.getItem('iz_calc_mental_2a_v3');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        this.xp = data.xp || 0;
+                        this.studentName = data.studentName || "Estudiante de 2° A";
+                        this.gsheetsUrl = data.gsheetsUrl || "";
+                        this.completedLevels = data.completedLevels || { 1: false, 2: false, 3: false };
+                        this.badgesEarned = data.badgesEarned || {};
+                    } catch(e) {}
+                }
+                document.getElementById('student-name-input').value = this.studentName;
+                document.getElementById('gsheets-url-input').value = this.gsheetsUrl;
+                this.renderBadges();
+                this.updateMenuBadges();
+            }
+
+            saveProgress() {
+                localStorage.setItem('iz_calc_mental_2a_v3', JSON.stringify({
+                    xp: this.xp,
+                    studentName: this.studentName,
+                    gsheetsUrl: this.gsheetsUrl,
+                    completedLevels: this.completedLevels,
+                    badgesEarned: this.badgesEarned
+                }));
+                this.renderBadges();
+                this.updateMenuBadges();
+            }
+
+            saveStudentName() {
+                const input = document.getElementById('student-name-input').value.trim();
+                if (input.length > 0) {
+                    this.studentName = input;
+                    this.saveProgress();
+                    this.showFeedbackBox("✨ Nombre guardado correctamente.", "emerald");
+                }
+            }
+
+            saveGSheetsUrl() {
+                const input = document.getElementById('gsheets-url-input').value.trim();
+                this.gsheetsUrl = input;
+                this.saveProgress();
+                this.toggleSettingsModal(false);
+            }
+
+            toggleSettingsModal(show) {
+                const modal = document.getElementById('modal-settings');
+                if (show) modal.classList.remove('hidden');
+                else modal.classList.add('hidden');
+            }
+
+            resetData() {
+                if (confirm("¿Deseas borrar tus puntos XP, nivel y medallas acumuladas?")) {
+                    localStorage.removeItem('iz_calc_mental_2a_v3');
+                    this.xp = 0;
+                    this.completedLevels = { 1: false, 2: false, 3: false };
+                    this.badgesEarned = {};
+                    this.updateGlobalUI();
+                    this.renderBadges();
+                    this.updateMenuBadges();
+                }
+            }
+
+            setGameMode(mode) {
+                this.gameMode = mode;
+                const pCard = document.getElementById('mode-card-practice');
+                const cCard = document.getElementById('mode-card-challenge');
+                
+                if (mode === 'practice') {
+                    pCard.className = "cursor-pointer bg-cardBg border-2 border-emerald-500 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4";
+                    cCard.className = "cursor-pointer bg-cardBg border-2 border-transparent hover:border-blue-500/50 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4";
+                    document.getElementById('lives-container').style.display = 'none';
+                } else {
+                    cCard.className = "cursor-pointer bg-cardBg border-2 border-blue-500 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4";
+                    pCard.className = "cursor-pointer bg-cardBg border-2 border-transparent hover:border-emerald-500/50 p-4 rounded-2xl transition-all shadow-md flex items-center gap-4";
+                    document.getElementById('lives-container').style.display = 'flex';
+                }
+            }
+
+            renderBadges() {
+                const container = document.getElementById('badges-container');
+                container.innerHTML = '';
+                
+                let count = 0;
+                Object.keys(ALL_BADGES).forEach(key => {
+                    const badge = ALL_BADGES[key];
+                    const earned = this.badgesEarned[key];
+                    const div = document.createElement('div');
+                    div.className = earned 
+                        ? "px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5"
+                        : "px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-600 text-xs flex items-center gap-1.5 opacity-60";
+                    div.innerHTML = `<span>${badge.name}</span>`;
+                    container.appendChild(div);
+                    if (earned) count++;
+                });
+
+                if (count === 0) {
+                    container.innerHTML = `<span class="text-xs text-softGray">Aún no has desbloqueado medallas. ¡Comienza a jugar en Modo Desafío!</span>`;
+                }
+            }
+
+            updateMenuBadges() {
+                for (let i = 1; i <= 3; i++) {
+                    const badge = document.getElementById(`badge-lvl-${i}`);
+                    if (badge) {
+                        if (this.completedLevels[i]) {
+                            badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30";
+                            badge.innerText = "¡Completado! ⭐";
+                        } else {
+                            badge.className = "text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400";
+                            badge.innerText = "Pendiente";
+                        }
+                    }
+                }
+            }
+
+            updateGlobalUI() {
+                document.getElementById('header-xp').innerText = `${this.xp} XP`;
+                document.getElementById('header-streak').innerText = `x${this.streak}`;
+                
+                let hearts = '';
+                for (let i = 0; i < 3; i++) {
+                    hearts += i < this.lives ? '❤️' : '🖤';
+                }
+                document.getElementById('header-lives').innerText = hearts;
+            }
+
+            startLevel(levelNum) {
+                const nameInp = document.getElementById('student-name-input').value.trim();
+                this.studentName = nameInp.length > 0 ? nameInp : "Estudiante de 2° A";
+                this.saveProgress();
+
+                this.currentLevel = levelNum;
+                this.currentIndex = 0;
+                this.score = 0;
+                this.lives = 3;
+                this.streak = 1;
+                this.timeLimitPerQuestion = 20;
+                this.consecutiveFastAnswers = 0;
+                this.consecutiveErrors = 0;
+                this.questionAttempts = [];
+                this.correctedWithHintsCount = 0;
+                this.fastAnswersCount = 0;
+
+                this.updateGlobalUI();
+
+                document.getElementById('screen-menu').classList.add('hidden');
+                document.getElementById('screen-result').classList.add('hidden');
+                document.getElementById('screen-quiz').classList.remove('hidden');
+
+                if (this.gameMode === 'practice') {
+                    document.getElementById('timer-box').style.display = 'none';
+                    document.getElementById('rescue-bar').style.display = 'none';
+                } else {
+                    document.getElementById('timer-box').style.display = 'flex';
+                    document.getElementById('rescue-bar').style.display = 'flex';
+                }
+
+                document.getElementById('quiz-level-title').innerText = LEVELS_DATA[levelNum].title;
+                this.loadQuestion();
+            }
+
+            returnToMenu() {
+                this.stopTimer();
+                window.speechSynthesis?.cancel();
+                document.getElementById('screen-quiz').classList.add('hidden');
+                document.getElementById('screen-result').classList.add('hidden');
+                document.getElementById('screen-menu').classList.remove('hidden');
+                this.updateMenuBadges();
+            }
+
+            loadQuestion() {
+                this.stopTimer();
+                this.isPausedForCorrection = false;
+                const qData = LEVELS_DATA[this.currentLevel].questions[this.currentIndex];
+
+                const progressPct = ((this.currentIndex) / 10) * 100;
+                document.getElementById('quiz-progress-bar').style.width = `${Math.max(progressPct, 8)}%`;
+                document.getElementById('quiz-progress-text').innerText = `Pregunta ${this.currentIndex + 1} de 10`;
+
+                document.getElementById('question-prompt').innerText = `${qData.q} = ?`;
+
+                const inputEl = document.getElementById('answer-input');
+                inputEl.value = '';
+                inputEl.disabled = false;
+                inputEl.focus();
+
+                document.getElementById('btn-submit').classList.remove('hidden');
+                document.getElementById('feedback-box').classList.add('hidden');
+                document.getElementById('btn-next').classList.add('hidden');
+
+                this.questionStartTime = Date.now();
+                this.timeLeft = this.timeLimitPerQuestion;
+
+                if (this.gameMode === 'challenge') {
+                    this.updateTimerUI();
+                    this.startTimer();
+                }
+
+                this.speakCurrentOperation();
+            }
+
+            speakCurrentOperation() {
+                const qData = LEVELS_DATA[this.currentLevel].questions[this.currentIndex];
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    let spokenText = qData.q
+                        .replace('+', ' más ')
+                        .replace('-', ' menos ')
+                        .replace('×', ' por ')
+                        .replace('/', ' entre ')
+                        .replace('÷', ' entre ');
+                    const utterance = new SpeechSynthesisUtterance(`¿Cuánto es ${spokenText}?`);
+                    utterance.lang = 'es-MX';
+                    utterance.rate = 0.95;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+
+            startTimer() {
+                const timerBar = document.getElementById('timer-bar');
+                timerBar.className = "h-full bg-emerald-500 transition-all duration-1000 rounded-full";
+                
+                this.timerInterval = setInterval(() => {
+                    if (this.isPausedForCorrection) return;
+
+                    this.timeLeft--;
+                    this.updateTimerUI();
+
+                    if (this.timeLeft <= 0) {
+                        this.stopTimer();
+                        this.handleTimeOut();
+                    }
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            updateTimerUI() {
+                document.getElementById('timer-text').innerText = `${this.timeLeft}s`;
+                const pct = (this.timeLeft / this.timeLimitPerQuestion) * 100;
+                const timerBar = document.getElementById('timer-bar');
+                timerBar.style.width = `${pct}%`;
+                if (this.timeLeft <= 5) {
+                    timerBar.className = "h-full bg-red-500 transition-all duration-1000 rounded-full";
+                } else if (this.timeLeft <= 10) {
+                    timerBar.className = "h-full bg-amber-500 transition-all duration-1000 rounded-full";
+                }
+            }
+
+            handleTimeOut() {
+                this.sound.playError();
+                this.streak = 1;
+                this.consecutiveFastAnswers = 0;
+                this.consecutiveErrors++;
+                
+                if (this.consecutiveErrors >= 2 && this.timeLimitPerQuestion < 25) {
+                    this.timeLimitPerQuestion += 5; // Adaptive ZDP support
+                }
+
+                if (this.gameMode === 'challenge') {
+                    this.lives = Math.max(0, this.lives - 1);
+                    this.updateGlobalUI();
+                }
+
+                const qData = LEVELS_DATA[this.currentLevel].questions[this.currentIndex];
+                const feedbackBox = document.getElementById('feedback-box');
+                feedbackBox.classList.remove('hidden');
+                feedbackBox.className = "rounded-2xl p-4 mb-3 text-sm font-medium flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 shake";
+                
+                document.getElementById('feedback-icon').innerText = "⏱️";
+                document.getElementById('feedback-title').innerText = "Tiempo Agotado - Pista Lógica";
+                document.getElementById('feedback-desc').innerText = `${qData.hint} Ingresa tu respuesta corrigiendo la operación.`;
+
+                this.isPausedForCorrection = true;
+                this.questionAttempts.push({ question: qData.q, status: "Tiempo Agotado / Pista Usada" });
+
+                if (this.gameMode === 'challenge' && this.lives === 0) {
+                    document.getElementById('btn-submit').classList.add('hidden');
+                    document.getElementById('btn-next').classList.remove('hidden');
+                }
+            }
+
+            submitAnswer() {
+                const inputEl = document.getElementById('answer-input');
+                const val = parseInt(inputEl.value.trim(), 10);
+                if (isNaN(val)) return;
+
+                const qData = LEVELS_DATA[this.currentLevel].questions[this.currentIndex];
+                const feedbackBox = document.getElementById('feedback-box');
+                feedbackBox.classList.remove('hidden');
+
+                const timeSpent = (Date.now() - this.questionStartTime) / 1000;
+
+                if (val === qData.a) {
+                    this.stopTimer();
+                    this.sound.playCorrect();
+                    this.score++;
+
+                    if (timeSpent <= 3) {
+                        this.fastAnswersCount++;
+                    }
+
+                    if (this.isPausedForCorrection) {
+                        this.correctedWithHintsCount++;
+                    }
+
+                    // Adaptive Difficulty (ZDP)
+                    if (timeSpent < 5 && !this.isPausedForCorrection) {
+                        this.consecutiveFastAnswers++;
+                        if (this.consecutiveFastAnswers >= 3 && this.timeLimitPerQuestion > 12) {
+                            this.timeLimitPerQuestion = 15;
+                        }
+                    } else {
+                        this.consecutiveFastAnswers = 0;
+                    }
+
+                    this.consecutiveErrors = 0;
+
+                    const speedBonus = Math.max(0, Math.floor(this.timeLeft / 2));
+                    const gainedXp = (15 + speedBonus) * this.streak;
+                    this.xp += gainedXp;
+                    this.streak++;
+                    this.updateGlobalUI();
+
+                    feedbackBox.className = "rounded-2xl p-4 mb-3 text-sm font-medium flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 pop";
+                    document.getElementById('feedback-icon').innerText = "✨";
+                    document.getElementById('feedback-title').innerText = "¡Resultado Correcto!";
+                    document.getElementById('feedback-desc').innerText = `Ganaste +${gainedXp} XP. Agilidad excelente.`;
+
+                    this.questionAttempts.push({ question: qData.q, status: "Correcto", time: `${timeSpent.toFixed(1)}s` });
+
+                    document.getElementById('answer-input').disabled = true;
+                    document.getElementById('btn-submit').classList.add('hidden');
+                    document.getElementById('btn-next').classList.remove('hidden');
+
+                } else {
+                    this.sound.playError();
+                    this.streak = 1;
+                    this.consecutiveFastAnswers = 0;
+                    this.consecutiveErrors++;
+
+                    if (this.consecutiveErrors >= 2 && this.timeLimitPerQuestion < 25) {
+                        this.timeLimitPerQuestion += 5;
+                    }
+
+                    if (this.gameMode === 'challenge') {
+                        this.lives = Math.max(0, this.lives - 1);
+                        this.updateGlobalUI();
+                    }
+
+                    feedbackBox.className = "rounded-2xl p-4 mb-3 text-sm font-medium flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 shake";
+                    document.getElementById('feedback-icon').innerText = "💡";
+                    document.getElementById('feedback-title').innerText = "Pista Lógica Pedagógica";
+                    document.getElementById('feedback-desc').innerText = `${qData.hint} Modifica tu respuesta y envía nuevamente.`;
+
+                    this.isPausedForCorrection = true;
+                    this.questionAttempts.push({ question: qData.q, status: "Pista Requerida por Error" });
+
+                    if (this.gameMode === 'challenge' && this.lives === 0) {
+                        document.getElementById('answer-input').disabled = true;
+                        document.getElementById('btn-submit').classList.add('hidden');
+                        document.getElementById('btn-next').classList.remove('hidden');
+                    }
+                }
+            }
+
+            buyLife() {
+                if (this.xp >= 100 && this.lives < 3) {
+                    this.xp -= 100;
+                    this.lives++;
+                    this.sound.playRescue();
+                    this.updateGlobalUI();
+                }
+            }
+
+            buyShield() {
+                if (this.xp >= 100) {
+                    this.xp -= 100;
+                    this.timeLeft += 10;
+                    this.sound.playRescue();
+                    this.updateTimerUI();
+                    this.updateGlobalUI();
+                }
+            }
+
+            nextQuestion() {
+                this.currentIndex++;
+                if (this.currentIndex < 10 && (this.gameMode === 'practice' || this.lives > 0)) {
+                    this.loadQuestion();
+                } else {
+                    this.finishLevel();
+                }
+            }
+
+            finishLevel() {
+                this.stopTimer();
+                window.speechSynthesis?.cancel();
+
+                document.getElementById('screen-quiz').classList.add('hidden');
+                document.getElementById('screen-result').classList.remove('hidden');
+
+                const isSuccess = this.score >= 6;
+                if (isSuccess) {
+                    this.sound.playVictory();
+                    this.confetti.fire();
+                    this.completedLevels[this.currentLevel] = true;
+                } else {
+                    this.sound.playError();
+                }
+
+                // Check and Award Badges
+                const newBadges = [];
+                if (this.fastAnswersCount >= 1 && !this.badgesEarned.rayo) {
+                    this.badgesEarned.rayo = true;
+                    newBadges.push(ALL_BADGES.rayo.name);
+                }
+                if (this.lives === 3 && this.score === 10 && this.gameMode === 'challenge' && !this.badgesEarned.acero) {
+                    this.badgesEarned.acero = true;
+                    newBadges.push(ALL_BADGES.acero.name);
+                }
+                if (this.correctedWithHintsCount >= 3 && !this.badgesEarned.pistas) {
+                    this.badgesEarned.pistas = true;
+                    newBadges.push(ALL_BADGES.pistas.name);
+                }
+
+                this.saveProgress();
+
+                // Populate Formative Report Area
+                document.getElementById('res-student-header').innerText = `Alumno: ${this.studentName} | Fecha: ${new Date().toLocaleDateString()}`;
+                document.getElementById('res-correct').innerText = `${this.score}/10`;
+                const pct = Math.round((this.score / 10) * 100);
+                document.getElementById('res-pct').innerText = `${pct}%`;
+                document.getElementById('res-xp').innerText = `+${this.score * 15} XP`;
+                document.getElementById('res-mode').innerText = this.gameMode === 'practice' ? 'Práctica' : 'Desafío';
+
+                let stars = "⭐ ⭐ ⭐";
+                if (this.score < 6) stars = "⭐";
+                else if (this.score < 9) stars = "⭐ ⭐";
+                document.getElementById('result-stars').innerText = stars;
+
+                // Render Metacognitive Breakdown
+                const breakdownEl = document.getElementById('res-error-breakdown');
+                breakdownEl.innerHTML = '';
+                const errorsOrHints = this.questionAttempts.filter(q => q.status !== "Correcto");
+
+                let areasText = "Ninguna (Dominio Perfecto)";
+                if (errorsOrHints.length === 0) {
+                    breakdownEl.innerHTML = `<div class="text-emerald-400 font-semibold">¡Dominio perfecto! No requeriste pistas en ninguna operación.</div>`;
+                } else {
+                    areasText = errorsOrHints.map(e => `${e.question} (${e.status})`).join("; ");
+                    errorsOrHints.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700";
+                        div.innerHTML = `<span>Operación <strong>${item.question}</strong></span> <span class="text-amber-400 font-semibold">${item.status}</span>`;
+                        breakdownEl.appendChild(div);
+                    });
+                }
+
+                // Render New Badges
+                const badgeBox = document.getElementById('new-badges-box');
+                const badgeList = document.getElementById('new-badges-list');
+                if (newBadges.length > 0) {
+                    badgeBox.classList.remove('hidden');
+                    badgeList.innerHTML = '';
+                    newBadges.forEach(b => {
+                        const span = document.createElement('span');
+                        span.className = "px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/40";
+                        span.innerText = b;
+                        badgeList.appendChild(span);
+                    });
+                } else {
+                    badgeBox.classList.add('hidden');
+                }
+
+                // Send Data to Google Sheets Web App
+                this.syncToGoogleSheets({
+                    alumno: this.studentName,
+                    modo: this.gameMode === 'practice' ? 'Práctica' : 'Desafío',
+                    nivel: `Nivel ${this.currentLevel}`,
+                    xp: this.score * 15,
+                    aciertos: this.score,
+                    totales: 10,
+                    porcentaje: pct,
+                    areasOportunidad: areasText,
+                    insignias: Object.keys(this.badgesEarned).join(", ") || "Ninguna"
+                });
+            }
+
+            syncToGoogleSheets(payload) {
+                const bannerText = document.getElementById('sheets-status-text');
+                const bannerBox = document.getElementById('sheets-status-banner');
+
+                if (!this.gsheetsUrl || this.gsheetsUrl.length < 10) {
+                    bannerBox.className = "mb-4 p-3 rounded-2xl text-xs font-bold text-center transition-all bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-center gap-2";
+                    bannerText.innerText = "⚙️ Google Sheet URL no configurada (Prof. Kevin). Los resultados se guardaron localmente.";
+                    return;
+                }
+
+                bannerBox.className = "mb-4 p-3 rounded-2xl text-xs font-bold text-center transition-all bg-blue-500/10 border border-blue-500/30 text-blue-300 flex items-center justify-center gap-2";
+                bannerText.innerText = "☁️ Enviando resultados al cuaderno del Profesor Kevin...";
+
+                fetch(this.gsheetsUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(() => {
+                    bannerBox.className = "mb-4 p-3 rounded-2xl text-xs font-bold text-center transition-all bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-center gap-2";
+                    bannerText.innerText = "✅ ¡Resultados registrados correctamente en Google Sheets!";
+                })
+                .catch((err) => {
+                    bannerBox.className = "mb-4 p-3 rounded-2xl text-xs font-bold text-center transition-all bg-red-500/10 border border-red-500/30 text-red-300 flex items-center justify-center gap-2";
+                    bannerText.innerText = "⚠️ Error de conexión al enviar resultados. Intenta nuevamente más tarde.";
+                });
+            }
+        }
+
+        let app;
+        window.onload = function() {
+            app = new MentalCalcAppV3();
+
+            document.getElementById('answer-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (!document.getElementById('btn-submit').classList.contains('hidden')) {
+                        app.submitAnswer();
+                    } else if (!document.getElementById('btn-next').classList.contains('hidden')) {
+                        app.nextQuestion();
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
